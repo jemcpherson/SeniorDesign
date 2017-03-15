@@ -46,18 +46,50 @@ void setup() {
       {
         leds[i] = color;//CHSV(gHue, 126, 126);
       }
-      FastLED.setBrightness(60);
+      FastLED.setBrightness(50);
 }
 
 void loop() { 
   // Turn the LED on, then pause
   int i = random8(60);
-  int j = random8(60);
-  int k = random8(60);
+  //int j = random8(60);
+ // int k = random8(60);
   leds[i] = color;
-  leds[j] = color;
-  leds[k] = color;
+  //leds[j] = color;
+  //leds[k] = color;
   FastLED.show();
-  delay(87);
-  nscale8(leds, 60, 200);
+  delay(40);
+  nscale8(leds, 60, 220);
+}
+
+CRGB randcolor()
+{
+  int r = random8();
+  int g = random8();
+  int b = random8();
+  int maxval = max3(r,g,b);
+  if(r == maxval)
+  {
+    g /= 3;
+    b /= 3;
+  }
+  else if(g == maxval)
+  {
+    r /= 3;
+    b /= 3;
+  }
+  else if(b == maxval)
+  {
+    r /= 3;
+    g /= 3;
+  }
+  return CRGB(r,g,b);  
+}
+
+int max3(int r, int g, int b)
+{
+  int maxval = r;
+  if(g > maxval) maxval = g;
+  if(b > maxval) maxval = b;
+  return maxval;  
 }
