@@ -41,23 +41,24 @@ void setup() {
       // FastLED.addLeds<DOTSTAR, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
       for(int i = 0; i < 60; i++)
       {
-        leds[i] = 0xFF0000;
+        leds[i] = 0xFFFFFF;
       }
+      FastLED.show();
 }
 
 void loop() { 
   // Turn the LED on, then pause
-  FastLED.setBrightness(10);
-  for(int i = 0; i < 60; i++)
-  {
-    leds[i] = 0xFF0000;
-    FastLED.show();
-    delay(5);
-  }
-  for(int i = 59; i >= 0; i--)
-  {
-    leds[i] = 0x0000FF;
-    FastLED.show();
-    delay(5);
-  }
+  //FastLED.setBrightness(10);
+  //for(int i = 0; i < 60; i++)
+  //{
+  //  leds[i] = 0xFF0000;
+  //  FastLED.show();
+  //  delay(5);
+  //}
+  //for(int i = 59; i >= 0; i--)
+  //{
+  //  leds[i] = 0x0000FF;
+  //  FastLED.show();
+  //  delay(5);
+  //}
 }
