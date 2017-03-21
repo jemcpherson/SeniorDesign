@@ -45,7 +45,7 @@ CRGB colors[2] = {CRGB::Red, CRGB::Green};
 int* fftout = (int*)(malloc(sizeof(int)*256));
 
 void setup() {
-  FastLED.addLeds<NEOPIXEL, LED_PIN>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(h_leds, NUM_LEDS);
   
   // Set up ADC and audio input.
   pinMode(AUDIO_INPUT_PIN, INPUT);
@@ -54,7 +54,7 @@ void setup() {
   
   // Initialize fastled library and turn off the LEDs
   for (int i = 1; i < NUM_LEDS; i++) {
-    leds[i] = CRGB::Black;
+    h_leds[i] = CRGB::Black;
   }
   FastLED.show(); delay(30); 
   
@@ -80,7 +80,7 @@ void loop() {
   
     if (LEDS_ENABLED == 1)
     {
-      spectrumLoop();
+      light_step();
     }
   
     // Restart audio sampling.
@@ -164,9 +164,17 @@ void light_step()
 //Joshua McPherson
 void pattern1()
 {
+  int num_buckets = 30;
+  int bucket_size = NUM_LEDS/num_buckets;
+  for (int i = 0; i < NUM_LEDS; i++) {
+    for (int i = 0; i < 
+    h_leds[i] = CRGB::Blue;
+  }
+  FastLED.show();
+    /*
     int num_buckets = 30;
     int bucket_size = NUM_LEDS/num_buckets;
-    int* buckets = shrinkArray(fftout, num_buckets);
+    //int* buckets = shrinkArray(fftout, num_buckets);
     int avg = buckets[0];
     for (int i = 0; i < num_buckets; i++)
     {
@@ -174,7 +182,7 @@ void pattern1()
       {
         if(buckets[i+1] > avg)
         { 
-          h_leds[i] = colors[color_selection];
+          h_leds[i] = CRGB::Blue;//colors[color_selection];
           l_leds[i] = CRGB::Black;
         }
         else
@@ -185,6 +193,7 @@ void pattern1()
       }
     } 
     FastLED.show();
+    */
 }
 
 //Joshua McPherson
