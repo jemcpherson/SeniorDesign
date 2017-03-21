@@ -2,8 +2,8 @@
 
 // How many leds in your strip?
 #define NUM_LEDS 300
-#define DATA_PIN 6
-#define DATA_PIN2 11
+#define LED_OUT 6
+#define LED_OUT2 11
 
 //Start of Adafruit//
 #define ARM_MATH_CM4
@@ -21,20 +21,17 @@ const int AUDIO_INPUT_PIN = 14;        // Input ADC pin for audio data.
 const int ANALOG_READ_RESOLUTION = 10; // Bits of resolution for the ADC.
 const int ANALOG_READ_AVERAGING = 16;  // Number of samples to average with each ADC reading.
 
-const int MAX_CHARS = 65;              // Max size of the input command buffer
-
 IntervalTimer samplingTimer;
 float samples[FFT_SIZE*2];
 float magnitudes[FFT_SIZE];
 int sampleCounter = 0;
-char commandBuffer[MAX_CHARS];
 float frequencyWindow[NUM_LEDS+1];
 float hues[NUM_LEDS];
 CRGB leds[NUM_LEDS];
 //End of Adafruit Sample Vars//
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
-// need to define DATA_PIN.
+// need to define LED_OUT.
 
 // Define the array of leds
 CRGB h_leds[NUM_LEDS]; //Upper strips of leds on trailer
@@ -42,10 +39,9 @@ CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer
 int color_selection = 0;
 int pattern = 1;
 CRGB colors[2] = {CRGB::Red, CRGB::Green}; 
-int* fftout = (int*)(malloc(sizeof(int)*256));
 
 void setup() {
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(h_leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, LED_OUT>(leds, NUM_LEDS);
   
   // Set up ADC and audio input.
   pinMode(AUDIO_INPUT_PIN, INPUT);
@@ -53,13 +49,10 @@ void setup() {
   analogReadAveraging(ANALOG_READ_AVERAGING);
   
   // Initialize fastled library and turn off the LEDs
-  for (int i = 1; i < NUM_LEDS; i++) {
-    h_leds[i] = CRGB::Black;
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB::Black;
   }
   FastLED.show(); delay(30); 
-  
-  // Clear the input command buffer
-  memset(commandBuffer, 0, sizeof(commandBuffer));
   
   // Initialize spectrum display
   spectrumSetup();
@@ -69,6 +62,7 @@ void setup() {
 }
 
 void loop() {
+  check_inputs();
   // Calculate FFT if a full sample is available.
   if (samplingIsDone()) {
     // Run FFT on sample data.
@@ -78,10 +72,8 @@ void loop() {
     // Calculate magnitude of complex numbers output by the FFT.
     arm_cmplx_mag_f32(samples, magnitudes, FFT_SIZE);
   
-    if (LEDS_ENABLED == 1)
-    {
-      light_step();
-    }
+    light_step();
+    //spectrumLoop();
   
     // Restart audio sampling.
     samplingBegin();
@@ -92,8 +84,8 @@ void loop() {
 
 //Joshua McPherson
 void setup2() { 
-      FastLED.addLeds<NEOPIXEL, DATA_PIN>(h_leds, NUM_LEDS);
-      FastLED.addLeds<NEOPIXEL, DATA_PIN2>(l_leds, NUM_LEDS);
+      FastLED.addLeds<NEOPIXEL, LED_OUT>(leds, NUM_LEDS);
+      FastLED.addLeds<NEOPIXEL, LED_OUT2>(l_leds, NUM_LEDS);
 
       // Initialize fastled library and turn off the LEDs
       for (int i = 0; i < NUM_LEDS; i++) {
@@ -119,7 +111,7 @@ void setup2() {
 
 //Joshua McPherson
 void loop2() { 
-  check_inputs();
+  //check_inputs();
   //Adafruit
   if (samplingIsDone()) {
     // Run FFT on sample data.
@@ -161,48 +153,84 @@ void light_step()
     }
 }
 
-//Joshua McPherson
 void pattern1()
 {
-  int num_buckets = 30;
-  int bucket_size = NUM_LEDS/num_buckets;
-  for (int i = 0; i < NUM_LEDS; i++) {
-    for (int i = 0; i < 
-    h_leds[i] = CRGB::Blue;
-  }
-  FastLED.show();
+    //int num_buckets = 30;
+    //int bucket_size = NUM_LEDS/num_buckets;
+    //int* buckets = shrinkArray(magnitudes, num_buckets);
+    int avg = samples[0];
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+        if(samples[i] > 70) leds[i] = CRGB::Green;
+        else leds[i] = CRGB::Black;
+    }
     /*
-    int num_buckets = 30;
-    int bucket_size = NUM_LEDS/num_buckets;
-    //int* buckets = shrinkArray(fftout, num_buckets);
-    int avg = buckets[0];
     for (int i = 0; i < num_buckets; i++)
     {
       for (int j = 0; j < bucket_size; j++)
       {
         if(buckets[i+1] > avg)
         { 
-          h_leds[i] = CRGB::Blue;//colors[color_selection];
+          leds[i] = CRGB::Blue;//colors[color_selection];
           l_leds[i] = CRGB::Black;
         }
         else
         {
-          h_leds[i] = CRGB::Black;
+          leds[i] = CRGB::Black;
           l_leds[i] = colors[color_selection];
         }
       }
     } 
-    FastLED.show();
     */
+    FastLED.show();
 }
 
 //Joshua McPherson
-int* shrinkArray(int* in, int num_buckets)
+void pattern1b()
+{
+    //int num_buckets = 30;
+    //int bucket_size = NUM_LEDS/num_buckets;
+    //int* buckets = shrinkArray(magnitudes, num_buckets);
+    int avg = magnitudes[0];
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+      if(magnitudes[i + 1] > avg/15)
+      {
+        leds[i] = CRGB::Green; 
+      }
+      else
+      {
+          leds[i] = CRGB::Black; 
+      }
+    }
+    /*
+    for (int i = 0; i < num_buckets; i++)
+    {
+      for (int j = 0; j < bucket_size; j++)
+      {
+        if(buckets[i+1] > avg)
+        { 
+          leds[i] = CRGB::Blue;//colors[color_selection];
+          l_leds[i] = CRGB::Black;
+        }
+        else
+        {
+          leds[i] = CRGB::Black;
+          l_leds[i] = colors[color_selection];
+        }
+      }
+    } 
+    */
+    FastLED.show();
+}
+
+//Joshua McPherson
+int* shrinkArray(float* in, int num_buckets)
 {
   //I need to think on the best way to shrink the array while minimizing data loss
   int* new_buckets = (int*)(malloc(sizeof(int)*(num_buckets + 1))); //Transfer the Average
   new_buckets[0] = in[0];
-  int* raw_in = &(in[1]); //Ignores the first bin, which stores the average magnitude 
+  float* raw_in = &(in[1]); //Ignores the first bin, which stores the average magnitude 
   int fft_size = sizeof(raw_in);
   int excess = fft_size % num_buckets;
   fft_size -= excess;

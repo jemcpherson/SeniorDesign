@@ -1,7 +1,7 @@
 #include "FastLED.h"
 
 // How many leds in your strip?
-#define NUM_LEDS 600
+#define NUM_LEDS 300
 #define DATA_PIN 6
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
@@ -18,7 +18,7 @@ void setup() {
       {
         leds[i] = 0xFFFFFF;
       }
-      FastLED.setBrightness(127);
+      //FastLED.setBrightness(127);
       FastLED.show();
 }
 
