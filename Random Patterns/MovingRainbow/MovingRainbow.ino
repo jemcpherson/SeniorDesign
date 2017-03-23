@@ -1,7 +1,7 @@
 #include "FastLED.h"
 
 // How many leds in your strip?
-#define NUM_LEDS 60
+#define NUM_LEDS 300
 #define DATA_PIN 6
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
@@ -39,7 +39,7 @@ void setup() {
       // FastLED.addLeds<P9813, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<DOTSTAR, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
-      fill_rainbow(leds, 60, 0, 43);
+      fill_rainbow(leds, 300, 0, 43);
 }
 
 void loop() { 

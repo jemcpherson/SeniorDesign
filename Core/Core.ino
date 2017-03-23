@@ -4,6 +4,7 @@
 #define NUM_LEDS 300
 #define LED_OUT 6
 #define LED_OUT2 11
+#define CYCLE_THRESHOLD 1
 
 //Start of Adafruit//
 #define ARM_MATH_CM4
@@ -30,6 +31,8 @@ float hues[NUM_LEDS];
 CRGB leds[NUM_LEDS];
 //End of Adafruit Sample Vars//
 
+int cycleCount = 0;
+
 // For led chips like Neopixels, which have a data line, ground, and power, you just
 // need to define LED_OUT.
 
@@ -39,9 +42,14 @@ CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer
 int color_selection = 0;
 int pattern = 1;
 CRGB colors[2] = {CRGB::Red, CRGB::Green}; 
+CRGB rainbow[256];
 
 void setup() {
   FastLED.addLeds<NEOPIXEL, LED_OUT>(leds, NUM_LEDS);
+  fill_rainbow(rainbow, 256, 0, 1);
+  //fill_rainbow(leds, NUM_LEDS, 0, 1);
+  FastLED.show();
+ // FastLED.delay(5000);
   
   // Set up ADC and audio input.
   pinMode(AUDIO_INPUT_PIN, INPUT);
@@ -52,7 +60,7 @@ void setup() {
   for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = CRGB::Black;
   }
-  FastLED.show(); delay(30); 
+  FastLED.show();
   
   // Initialize spectrum display
   spectrumSetup();
@@ -71,65 +79,19 @@ void loop() {
     arm_cfft_radix4_f32(&fft_inst, samples);
     // Calculate magnitude of complex numbers output by the FFT.
     arm_cmplx_mag_f32(samples, magnitudes, FFT_SIZE);
-  
-    light_step();
+    if(cycleCount%CYCLE_THRESHOLD == 0)
+    {
+      light_step();
+      cycleCount = 0;
+    }
     //spectrumLoop();
   
     // Restart audio sampling.
     samplingBegin();
+    cycleCount++;
   }
     
   // Parse any pending commands.
-}
-
-//Joshua McPherson
-void setup2() { 
-      FastLED.addLeds<NEOPIXEL, LED_OUT>(leds, NUM_LEDS);
-      FastLED.addLeds<NEOPIXEL, LED_OUT2>(l_leds, NUM_LEDS);
-
-      // Initialize fastled library and turn off the LEDs
-      for (int i = 0; i < NUM_LEDS; i++) {
-            leds[i] = CRGB::Black;
-      }
-      FastLED.show(); delay(30); 
-      
-      //Adafruit
-      //Set up ADC and audio input. 
-      pinMode(AUDIO_INPUT_PIN, INPUT);
-      analogReadResolution(ANALOG_READ_RESOLUTION);
-      analogReadAveraging(ANALOG_READ_AVERAGING);
-
-       // Initialize spectrum display
-       spectrumSetup();
-
-       // Begin sampling audio
-       samplingBegin();
-       //End Adafruit
-         
-      FastLED.setBrightness(100);
-}
-
-//Joshua McPherson
-void loop2() { 
-  //check_inputs();
-  //Adafruit
-  if (samplingIsDone()) {
-    // Run FFT on sample data.
-    arm_cfft_radix4_instance_f32 fft_inst;
-    arm_cfft_radix4_init_f32(&fft_inst, FFT_SIZE, 0, 1);
-    arm_cfft_radix4_f32(&fft_inst, samples);
-    // Calculate magnitude of complex numbers output by the FFT.
-    arm_cmplx_mag_f32(samples, magnitudes, FFT_SIZE);
-  
-    if (LEDS_ENABLED == 1)
-    {
-      spectrumLoop();
-    }
-  
-    // Restart audio sampling.
-    samplingBegin();
-  }
-  //End Adafruit
 }
 
 //Joshua McPherson
@@ -153,17 +115,27 @@ void light_step()
     }
 }
 
-void pattern1()
+void pattern1b()
 {
     //int num_buckets = 30;
     //int bucket_size = NUM_LEDS/num_buckets;
     //int* buckets = shrinkArray(magnitudes, num_buckets);
-    int avg = samples[0];
+    int avg = magnitudes[0];
+    int maxval = 0;
+    int max_index = 0;
+    for (int i = 0; i < 256; i++)
+    {
+          if (magnitudes[i] >= maxval)
+          {
+              maxval = magnitudes[i];
+              max_index = i;  
+          }
+    }
     for (int i = 0; i < NUM_LEDS; i++)
     {
-        if(samples[i] > 70) leds[i] = CRGB::Green;
-        else leds[i] = CRGB::Black;
+        leds[i] = CRGB::Blue;
     }
+    leds[max_index] = CRGB::Red;
     /*
     for (int i = 0; i < num_buckets; i++)
     {
@@ -186,24 +158,52 @@ void pattern1()
 }
 
 //Joshua McPherson
-void pattern1b()
+void cycleRainbow()
 {
     //int num_buckets = 30;
     //int bucket_size = NUM_LEDS/num_buckets;
     //int* buckets = shrinkArray(magnitudes, num_buckets);
-    int avg = magnitudes[0];
+    //int avg = magnitudes[0];
+    for (int c = 0; c < 255; c++)
+    {
+      for (int i = 0; i < NUM_LEDS; i++)
+      {
+        leds[i] = rainbow[c];        
+      }
+      FastLED.show();
+      FastLED.delay(100);
+    }
+}
+
+//Joshua McPherson
+void pattern1()
+{
+    //int num_buckets = 30;
+    //int bucket_size = NUM_LEDS/num_buckets;
+    //int* buckets = shrinkArray(magnitudes, num_buckets);
+    //int avg = magnitudes[0];
     for (int i = 0; i < NUM_LEDS; i++)
     {
-      if(magnitudes[i + 1] > avg/15)
+      if(i < 256 && magnitudes[i] >= 200)
       {
-        leds[i] = CRGB::Green; 
+        leds[i] = rainbow[((int)(((log(magnitudes[i])/log(3.4))/3.8) * 255.0))];
       }
-      else
+      if(i >= 256 || magnitudes[i] < 200)
       {
           leds[i] = CRGB::Black; 
       }
     }
-    /*
+    FastLED.show();
+}
+      /**
+      if(i < 256 && magnitudes[i] >= 700)
+      {
+        leds[i].green = ((magnitudes[i]-0)/4000) * 255;
+      }
+      if(i < 256 && magnitudes[i] >= 1300)
+      {
+        leds[i].blue = ((magnitudes[i]-0)/8000) * 255;
+      }
     for (int i = 0; i < num_buckets; i++)
     {
       for (int j = 0; j < bucket_size; j++)
@@ -220,9 +220,10 @@ void pattern1b()
         }
       }
     } 
-    */
+    
     FastLED.show();
 }
+*/
 
 //Joshua McPherson
 int* shrinkArray(float* in, int num_buckets)
@@ -288,6 +289,8 @@ void spectrumSetup() {
     hues[i] = 360.0*(float(i)/float(NUM_LEDS-1));
   }
 }
+
+
 
 //Adafruit Function
 void spectrumLoop() {
