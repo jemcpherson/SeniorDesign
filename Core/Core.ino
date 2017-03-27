@@ -14,8 +14,6 @@
 int SAMPLE_RATE_HZ = 9000;             // Sample rate of the audio in hertz.
 float SPECTRUM_MIN_DB = 20.0;          // Audio intensity (in decibels) that maps to low LED brightness.
 float SPECTRUM_MAX_DB = 70.0;          // Audio intensity (in decibels) that maps to high LED brightness.
-int LEDS_ENABLED = 1;                  // Control if the LED's should display the spectrum or not.  1 is true, 0 is false.
-                                       // Useful for turning the LED display on and off with commands from the serial port.
 const int FFT_SIZE = 256;              // Size of the FFT.  Realistically can only be at most 256 
                                        // without running out of memory for buffers and other state.
 const int AUDIO_INPUT_PIN = 14;        // Input ADC pin for audio data.
@@ -27,7 +25,7 @@ float samples[FFT_SIZE*2];
 float magnitudes[FFT_SIZE];
 int sampleCounter = 0;
 float frequencyWindow[NUM_LEDS+1];
-float hues[NUM_LEDS];
+//float hues[NUM_LEDS];
 CRGB leds[NUM_LEDS];
 //End of Adafruit Sample Vars//
 
@@ -40,27 +38,46 @@ int cycleCount = 0;
 CRGB h_leds[NUM_LEDS]; //Upper strips of leds on trailer
 CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer 
 int color_selection = 0;
-int pattern = 1;
+int pattern_selection = 2;
 CRGB colors[2] = {CRGB::Red, CRGB::Green}; 
 CRGB rainbow[256];
 
+//Audio Range Divisions
+int bass_lowmid_division;
+int lowmid_mid_division;
+int mid_highmid_division;
+int highmid_presence_division;
+
+//Pattern2 Variables
+int highstrip_midrange_midpoint = 50;
+int highstrip_highmidrange_midpoint = 150;
+int highstrip_presencerange_midpoint = 250;
+int lowstrip_bassrange_midpoint = 75;
+int lowstrip_lowmidrange_midpoint = 225;
+
+int highstrip_rangesize = 100;
+int lowstrip_rangesize = 150;
+
 void setup() {
+    
+  // Initialize fastled library and turn off the LEDs
   FastLED.addLeds<NEOPIXEL, LED_OUT>(leds, NUM_LEDS);
-  fill_rainbow(rainbow, 256, 0, 1);
-  //fill_rainbow(leds, NUM_LEDS, 0, 1);
+  clear_leds();
   FastLED.show();
- // FastLED.delay(5000);
+  
+  //Generate range of colors
+  fill_rainbow(rainbow, 256, 0, 1);
+
+  //Set up range divisions, based on frequencies listed at http://www.teachmeaudio.com/mixing/techniques/audio-spectrum 
+  bass_lowmid_division = frequencyToBin(250);
+  lowmid_mid_division = frequencyToBin(500);
+  mid_highmid_division = frequencyToBin(2000);
+  highmid_presence_division = frequencyToBin(4000);
   
   // Set up ADC and audio input.
   pinMode(AUDIO_INPUT_PIN, INPUT);
   analogReadResolution(ANALOG_READ_RESOLUTION);
   analogReadAveraging(ANALOG_READ_AVERAGING);
-  
-  // Initialize fastled library and turn off the LEDs
-  for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB::Black;
-  }
-  FastLED.show();
   
   // Initialize spectrum display
   spectrumSetup();
@@ -79,42 +96,100 @@ void loop() {
     arm_cfft_radix4_f32(&fft_inst, samples);
     // Calculate magnitude of complex numbers output by the FFT.
     arm_cmplx_mag_f32(samples, magnitudes, FFT_SIZE);
-    if(cycleCount%CYCLE_THRESHOLD == 0)
-    {
-      light_step();
-      cycleCount = 0;
-    }
+    
     //spectrumLoop();
-  
+    light_step();
     // Restart audio sampling.
     samplingBegin();
     cycleCount++;
   }
-    
-  // Parse any pending commands.
 }
 
 //Joshua McPherson
 void check_inputs()
 {
-  
 }
 
 //Joshua McPherson
 void light_step()
 {
-    switch(pattern)
+    switch(pattern_selection)
     {
         case 1:
           pattern1();
           break;
         case 2:
+          pattern2();
           break;
         case 3:
           break;
     }
 }
 
+//Ours
+void pattern1()
+{
+    //int num_buckets = 30;
+    //int bucket_size = NUM_LEDS/num_buckets;
+    //int* buckets = shrinkArray(magnitudes, num_buckets);
+    //int avg = magnitudes[0];
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+      if(i < 256 && magnitudes[i] >= 200)
+      {
+        leds[i] = rainbow[((int)(((log(magnitudes[i])/log(3.4))/3.8) * 255.0))];
+      }
+      if(i >= 256 || magnitudes[i] < 200)
+      {
+          leds[i] = CRGB::Black; 
+      }
+    }
+    FastLED.show();
+}
+
+//Ours
+void pattern2()
+{
+    float bass_mag = get_average_portion_magnitude(0,bass_lowmid_division);
+    float lowmid_mag = get_average_portion_magnitude(bass_lowmid_division,lowmid_mid_division);
+    float mid_mag = get_average_portion_magnitude(lowmid_mid_division,mid_highmid_division);
+    float highmid_mag = get_average_portion_magnitude(mid_highmid_division,highmid_presence_division);
+    float presence_mag = get_average_portion_magnitude(highmid_presence_division, FFT_SIZE);
+    float avg = (bass_mag + lowmid_mag + mid_mag + highmid_mag + presence_mag)/5;
+    
+    clear_leds();
+    float ratio_base = avg*2;
+    
+    int m_leds = int((mid_mag/ratio_base)*highstrip_rangesize/2);
+    int hm_leds = int((highmid_mag/ratio_base)*highstrip_rangesize/2);
+    int p_leds = int((presence_mag/ratio_base)*highstrip_rangesize/2);
+    int b_leds = int((bass_mag/ratio_base)*lowstrip_rangesize/2);
+    int lm_leds = int((lowmid_mag/ratio_base)*lowstrip_rangesize/2);
+
+    for(int i = highstrip_midrange_midpoint-m_leds; i < highstrip_midrange_midpoint+m_leds; i++)
+    {
+      h_leds[i] = colors[color_selection];
+    }
+    for(int i = highstrip_highmidrange_midpoint-m_leds; i < highstrip_highmidrange_midpoint+m_leds; i++)
+    {
+      h_leds[i] = colors[color_selection];  
+    }
+    for(int i = highstrip_presencerange_midpoint-m_leds; i < highstrip_presencerange_midpoint+m_leds; i++)
+    {
+      h_leds[i] = colors[color_selection];  
+    }
+    for(int i = lowstrip_bassrange_midpoint-m_leds; i < lowstrip_bassrange_midpoint+m_leds; i++)
+    {
+      l_leds[i] = colors[color_selection];  
+    }
+    for(int i = lowstrip_lowmidrange_midpoint-m_leds; i < lowstrip_lowmidrange_midpoint+m_leds; i++)
+    {
+      l_leds[i] = colors[color_selection];  
+    }
+    FastLED.show();
+}
+
+//Ours
 void pattern1b()
 {
     //int num_buckets = 30;
@@ -136,96 +211,20 @@ void pattern1b()
         leds[i] = CRGB::Blue;
     }
     leds[max_index] = CRGB::Red;
-    /*
-    for (int i = 0; i < num_buckets; i++)
-    {
-      for (int j = 0; j < bucket_size; j++)
-      {
-        if(buckets[i+1] > avg)
-        { 
-          leds[i] = CRGB::Blue;//colors[color_selection];
-          l_leds[i] = CRGB::Black;
-        }
-        else
-        {
-          leds[i] = CRGB::Black;
-          l_leds[i] = colors[color_selection];
-        }
-      }
-    } 
-    */
     FastLED.show();
 }
 
-//Joshua McPherson
-void cycleRainbow()
+
+//Ours
+void clear_leds()
 {
-    //int num_buckets = 30;
-    //int bucket_size = NUM_LEDS/num_buckets;
-    //int* buckets = shrinkArray(magnitudes, num_buckets);
-    //int avg = magnitudes[0];
-    for (int c = 0; c < 255; c++)
-    {
-      for (int i = 0; i < NUM_LEDS; i++)
-      {
-        leds[i] = rainbow[c];        
-      }
-      FastLED.show();
-      FastLED.delay(100);
-    }
+  for (int i = 0; i < NUM_LEDS; i++) 
+  {
+    leds[i] = CRGB::Black;
+  }  
 }
 
-//Joshua McPherson
-void pattern1()
-{
-    //int num_buckets = 30;
-    //int bucket_size = NUM_LEDS/num_buckets;
-    //int* buckets = shrinkArray(magnitudes, num_buckets);
-    //int avg = magnitudes[0];
-    for (int i = 0; i < NUM_LEDS; i++)
-    {
-      if(i < 256 && magnitudes[i] >= 200)
-      {
-        leds[i] = rainbow[((int)(((log(magnitudes[i])/log(3.4))/3.8) * 255.0))];
-      }
-      if(i >= 256 || magnitudes[i] < 200)
-      {
-          leds[i] = CRGB::Black; 
-      }
-    }
-    FastLED.show();
-}
-      /**
-      if(i < 256 && magnitudes[i] >= 700)
-      {
-        leds[i].green = ((magnitudes[i]-0)/4000) * 255;
-      }
-      if(i < 256 && magnitudes[i] >= 1300)
-      {
-        leds[i].blue = ((magnitudes[i]-0)/8000) * 255;
-      }
-    for (int i = 0; i < num_buckets; i++)
-    {
-      for (int j = 0; j < bucket_size; j++)
-      {
-        if(buckets[i+1] > avg)
-        { 
-          leds[i] = CRGB::Blue;//colors[color_selection];
-          l_leds[i] = CRGB::Black;
-        }
-        else
-        {
-          leds[i] = CRGB::Black;
-          l_leds[i] = colors[color_selection];
-        }
-      }
-    } 
-    
-    FastLED.show();
-}
-*/
-
-//Joshua McPherson
+//Ours
 int* shrinkArray(float* in, int num_buckets)
 {
   //I need to think on the best way to shrink the array while minimizing data loss
@@ -248,6 +247,45 @@ int* shrinkArray(float* in, int num_buckets)
       new_buckets[i+1] = avg;
   }
   return new_buckets;
+}
+
+//Ours
+float get_average_magnitude()
+{
+    //float sum = 0;
+    //for(int i = 0; i < FFT_SIZE; i++)
+    //{
+    //   sum += magnitudes[i];     
+    //}
+    //float avg = sum/FFT_SIZE;
+    //return avg;
+    return get_average_portion_magnitude(0, FFT_SIZE);
+}
+
+//Ours
+float get_average_portion_magnitude(int low, int high)
+{
+    float sum = 0;
+    for(int i = low; i < high; i++)
+    {
+        sum += magnitudes[i];     
+    }
+    float avg = sum/(high-low);
+    return avg;
+}
+
+//Ours (Debug Function)
+void cycleRainbow()
+{
+    for (int c = 0; c < 255; c++)
+    {
+      for (int i = 0; i < NUM_LEDS; i++)
+      {
+        leds[i] = rainbow[c];        
+      }
+      FastLED.show();
+      FastLED.delay(100);
+    }
 }
 
 // Adafruit Function
@@ -285,12 +323,10 @@ void spectrumSetup() {
     frequencyWindow[i] = i*windowSize;
   }
   // Evenly spread hues across all pixels.
-  for (int i = 0; i < NUM_LEDS; ++i) {
-    hues[i] = 360.0*(float(i)/float(NUM_LEDS-1));
-  }
+  //for (int i = 0; i < NUM_LEDS; ++i) {
+  //  hues[i] = 360.0*(float(i)/float(NUM_LEDS-1));
+  //}
 }
-
-
 
 //Adafruit Function
 void spectrumLoop() {
