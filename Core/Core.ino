@@ -2,8 +2,8 @@
 
 // How many leds in your strip?
 #define NUM_LEDS 300
-#define LED_OUT 6
-#define LED_OUT2 11
+#define LED_OUT_HIGH_LEFT 6
+#define LED_OUT_LOW_LEFT 11
 #define CYCLE_THRESHOLD 1
 
 //Start of Adafruit//
@@ -38,7 +38,7 @@ int cycleCount = 0;
 CRGB h_leds[NUM_LEDS]; //Upper strips of leds on trailer
 CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer 
 int color_selection = 0;
-int pattern_selection = 2;
+int pattern_selection = 1;
 CRGB colors[2] = {CRGB::Red, CRGB::Green}; 
 CRGB rainbow[256];
 
@@ -61,7 +61,8 @@ int lowstrip_rangesize = 150;
 void setup() {
     
   // Initialize fastled library and turn off the LEDs
-  FastLED.addLeds<NEOPIXEL, LED_OUT>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, LED_OUT_HIGH_LEFT>(h_leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, LED_OUT_LOW_LEFT>(l_leds, NUM_LEDS);
   clear_leds();
   FastLED.show();
   
@@ -116,7 +117,7 @@ void light_step()
     switch(pattern_selection)
     {
         case 1:
-          pattern1();
+          pattern1b();
           break;
         case 2:
           pattern2();
@@ -132,16 +133,15 @@ void pattern1()
     //int num_buckets = 30;
     //int bucket_size = NUM_LEDS/num_buckets;
     //int* buckets = shrinkArray(magnitudes, num_buckets);
-    //int avg = magnitudes[0];
     for (int i = 0; i < NUM_LEDS; i++)
     {
       if(i < 256 && magnitudes[i] >= 200)
       {
-        leds[i] = rainbow[((int)(((log(magnitudes[i])/log(3.4))/3.8) * 255.0))];
+        h_leds[i] = rainbow[((int)(((log(magnitudes[i])/log(3.4))/3.8) * 255.0))];
       }
       if(i >= 256 || magnitudes[i] < 200)
       {
-          leds[i] = CRGB::Black; 
+          h_leds[i] = CRGB::Black; 
       }
     }
     FastLED.show();
@@ -158,7 +158,7 @@ void pattern2()
     float avg = (bass_mag + lowmid_mag + mid_mag + highmid_mag + presence_mag)/5;
     
     clear_leds();
-    float ratio_base = avg*2;
+    float ratio_base = avg;
     
     int m_leds = int((mid_mag/ratio_base)*highstrip_rangesize/2);
     int hm_leds = int((highmid_mag/ratio_base)*highstrip_rangesize/2);
@@ -192,25 +192,40 @@ void pattern2()
 //Ours
 void pattern1b()
 {
-    //int num_buckets = 30;
-    //int bucket_size = NUM_LEDS/num_buckets;
-    //int* buckets = shrinkArray(magnitudes, num_buckets);
-    int avg = magnitudes[0];
-    int maxval = 0;
-    int max_index = 0;
+    float avg = get_average_magnitude();
     for (int i = 0; i < 256; i++)
     {
-          if (magnitudes[i] >= maxval)
+          if (magnitudes[i] >= avg*2)
           {
-              maxval = magnitudes[i];
-              max_index = i;  
+              h_leds[i] = colors[color_selection];
+              l_leds[i] = CRGB::Black;
+          }
+          else
+          {
+              h_leds[i] = CRGB::Black;
+              l_leds[i] = colors[color_selection];
           }
     }
-    for (int i = 0; i < NUM_LEDS; i++)
+    FastLED.show();
+}
+
+//Ours
+void pattern1c()
+{
+    float avg = get_average_magnitude();
+    for (int i = 0; i < 256; i++)
     {
-        leds[i] = CRGB::Blue;
+          if (magnitudes[i] >= 700)
+          {
+              h_leds[i] = colors[color_selection];
+              l_leds[i] = CRGB::Black;
+          }
+          else
+          {
+              h_leds[i] = CRGB::Black;
+              l_leds[i] = colors[color_selection];
+          }
     }
-    leds[max_index] = CRGB::Red;
     FastLED.show();
 }
 
@@ -220,7 +235,8 @@ void clear_leds()
 {
   for (int i = 0; i < NUM_LEDS; i++) 
   {
-    leds[i] = CRGB::Black;
+    h_leds[i] = CRGB::Black;
+    l_leds[i] = CRGB::Black;
   }  
 }
 
