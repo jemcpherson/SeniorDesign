@@ -37,9 +37,9 @@ int cycleCount = 0;
 // Define the array of leds
 CRGB h_leds[NUM_LEDS]; //Upper strips of leds on trailer
 CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer 
-int color_selection = 0;
-int pattern_selection = 1;
-CRGB colors[2] = {CRGB::Red, CRGB::Green}; 
+int color_selection = 3;
+int pattern_selection = 2;
+CRGB colors[4] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow}; 
 CRGB rainbow[256];
 
 //Audio Range Divisions
@@ -109,6 +109,7 @@ void loop() {
 //Joshua McPherson
 void check_inputs()
 {
+  
 }
 
 //Joshua McPherson
@@ -117,7 +118,7 @@ void light_step()
     switch(pattern_selection)
     {
         case 1:
-          pattern1b();
+          pattern1c();
           break;
         case 2:
           pattern2();
@@ -161,10 +162,15 @@ void pattern2()
     float ratio_base = avg;
     
     int m_leds = int((mid_mag/ratio_base)*highstrip_rangesize/2);
+    if (m_leds >= 50) m_leds = 49;
     int hm_leds = int((highmid_mag/ratio_base)*highstrip_rangesize/2);
+    if (hm_leds >= 50) hm_leds = 49;
     int p_leds = int((presence_mag/ratio_base)*highstrip_rangesize/2);
+    if (p_leds >= 50) p_leds = 49;
     int b_leds = int((bass_mag/ratio_base)*lowstrip_rangesize/2);
+    if (hm_leds >= 75) hm_leds = 74;
     int lm_leds = int((lowmid_mag/ratio_base)*lowstrip_rangesize/2);
+    if (lm_leds >= 75) lm_leds = 74;
 
     for(int i = highstrip_midrange_midpoint-m_leds; i < highstrip_midrange_midpoint+m_leds; i++)
     {
@@ -268,13 +274,6 @@ int* shrinkArray(float* in, int num_buckets)
 //Ours
 float get_average_magnitude()
 {
-    //float sum = 0;
-    //for(int i = 0; i < FFT_SIZE; i++)
-    //{
-    //   sum += magnitudes[i];     
-    //}
-    //float avg = sum/FFT_SIZE;
-    //return avg;
     return get_average_portion_magnitude(0, FFT_SIZE);
 }
 
