@@ -16,6 +16,15 @@ float SPECTRUM_MIN_DB = 20.0;          // Audio intensity (in decibels) that map
 float SPECTRUM_MAX_DB = 70.0;          // Audio intensity (in decibels) that maps to high LED brightness.
 const int FFT_SIZE = 256;              // Size of the FFT.  Realistically can only be at most 256 
                                        // without running out of memory for buffers and other state.
+const int PATTERN_INPUT_PIN = 2;       // Input digital pin for changing pattern
+const int COLOR_INPUT_PIN = 3;         // Input digital pin for changing color
+const int BRIGHTNESS_INPUT_PIN = 4;    // Input digital pin for changing brightness
+
+// temporary interrupt buttons - will be changed later to be simply incoming 0 or 1 bits
+const int SCORE_INPUT_PIN = 21;
+const int WIN_INPUT_PIN = 22;
+const int NEWGAME_INPUT_PIN = 23;
+
 const int AUDIO_INPUT_PIN = 14;        // Input ADC pin for audio data.
 const int ANALOG_READ_RESOLUTION = 10; // Bits of resolution for the ADC.
 const int ANALOG_READ_AVERAGING = 16;  // Number of samples to average with each ADC reading.
@@ -413,6 +422,3 @@ void samplingBegin() {
 boolean samplingIsDone() {
   return sampleCounter >= FFT_SIZE*2;
 }
-
-
-
