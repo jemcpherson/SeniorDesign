@@ -48,6 +48,7 @@ CRGB h_leds[NUM_LEDS]; //Upper strips of leds on trailer
 CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer 
 int color_selection = 3;
 int pattern_selection = 2;
+int brightness = 0;    //Brightness selection variable, from 0-2
 CRGB colors[4] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow}; 
 CRGB rainbow[256];
 
@@ -118,7 +119,12 @@ void loop() {
 //Joshua McPherson
 void check_inputs()
 {
-  
+  if (digitalRead(PATTERN_INPUT_PIN == HIGH) change_pattern_selection();
+  if (digitalRead(COLOR_INPUT_PIN == HIGH) change_color_selection();
+  if (digitalRead(BRIGHTNESS_INPUT_PIN == HIGH) change_brightness();
+  if (digitalRead(SCORE_INPUT_PIN == HIGH) scoreInterrupt();
+  if (digitalRead(WIN_INPUT_PIN == HIGH) winInterrupt();
+  if (digitalRead(NEWGAME_INPUT_PIN == HIGH) newGameInterrupt();
 }
 
 //Joshua McPherson
@@ -135,6 +141,38 @@ void light_step()
         case 3:
           break;
     }
+}
+
+
+// John Chaney
+void change_pattern_selection()
+{
+  pattern_selection++;
+  if (pattern_selection > 3) pattern_selection = 1;
+}
+
+// John Chaney
+void change_color_selection()
+{
+  color_selection++;
+  if (color_selection > 3) color_selection = 0;
+}
+
+// John Chaney
+void change_brightness()
+{
+  switch (brightness){
+    case 1:
+      FastLED.setBrightness(40);
+      break;
+    case 2:
+      FastLED.setBrightness(90);
+      break;
+    case 3:
+      FastLED.setBrightness(180);
+      break;
+  }
+  if (brightness > 1) brightness = 0;
 }
 
 //Ours
@@ -242,6 +280,36 @@ void pattern1c()
           }
     }
     FastLED.show();
+}
+
+
+void scoreInterrupt()
+{
+  for (int i = 0; i < 2; i++)
+    for (int i = 0; i < NUM_LEDS; i++) 
+    {
+      h_leds[i] = CRGB::Red;
+      l_leds[i] = CRGB::Red;
+    }
+    FastLED.show();
+    FastLED.delay(500);
+  
+    FastLED.clear();
+    FastLED.show();
+    FastLED.delay(500);
+  }
+}
+
+
+void winInterrupt()
+{
+  // make really cool stuff happen here for teh win!!11!!!!1
+}
+
+
+void newGameInterrupt()
+{
+  // rainbow stuff happens I guess
 }
 
 
@@ -422,3 +490,6 @@ void samplingBegin() {
 boolean samplingIsDone() {
   return sampleCounter >= FFT_SIZE*2;
 }
+      
+      
+      
