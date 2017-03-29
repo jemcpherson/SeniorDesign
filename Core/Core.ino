@@ -73,17 +73,17 @@ void setup() {
   // Initialize fastled library and turn off the LEDs
   FastLED.addLeds<NEOPIXEL, LED_OUT_HIGH_LEFT>(h_leds, NUM_LEDS);
   FastLED.addLeds<NEOPIXEL, LED_OUT_LOW_LEFT>(l_leds, NUM_LEDS);
-  clear_leds();
+  FastLED.clear();
   FastLED.show();
   
   //Generate range of colors
   fill_rainbow(rainbow, 256, 0, 1);
 
   //Set up range divisions, based on frequencies listed at http://www.teachmeaudio.com/mixing/techniques/audio-spectrum 
-  bass_lowmid_division = frequencyToBin(250);
-  lowmid_mid_division = frequencyToBin(500);
-  mid_highmid_division = frequencyToBin(2000);
-  highmid_presence_division = frequencyToBin(4000);
+  bass_lowmid_division = frequencyToBin(250.0);
+  lowmid_mid_division = frequencyToBin(500.0);
+  mid_highmid_division = frequencyToBin(2000.0);
+  highmid_presence_division = frequencyToBin(4000.0);
   
   // Set up ADC and audio input.
   pinMode(AUDIO_INPUT_PIN, INPUT);
@@ -119,12 +119,12 @@ void loop() {
 //Joshua McPherson
 void check_inputs()
 {
-  if (digitalRead(PATTERN_INPUT_PIN == HIGH) change_pattern_selection();
-  if (digitalRead(COLOR_INPUT_PIN == HIGH) change_color_selection();
-  if (digitalRead(BRIGHTNESS_INPUT_PIN == HIGH) change_brightness();
-  if (digitalRead(SCORE_INPUT_PIN == HIGH) scoreInterrupt();
-  if (digitalRead(WIN_INPUT_PIN == HIGH) winInterrupt();
-  if (digitalRead(NEWGAME_INPUT_PIN == HIGH) newGameInterrupt();
+  if (digitalRead(PATTERN_INPUT_PIN == HIGH)) change_pattern_selection();
+  if (digitalRead(COLOR_INPUT_PIN == HIGH)) change_color_selection();
+  if (digitalRead(BRIGHTNESS_INPUT_PIN == HIGH)) change_brightness();
+  if (digitalRead(SCORE_INPUT_PIN == HIGH)) scoreInterrupt();
+  if (digitalRead(WIN_INPUT_PIN == HIGH)) winInterrupt();
+  if (digitalRead(NEWGAME_INPUT_PIN == HIGH)) newGameInterrupt();
 }
 
 //Joshua McPherson
@@ -297,7 +297,6 @@ void scoreInterrupt()
     FastLED.clear();
     FastLED.show();
     FastLED.delay(500);
-  }
 }
 
 
