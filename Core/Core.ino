@@ -282,6 +282,47 @@ void pattern1c()
     FastLED.show();
 }
 
+//Ours
+void pattern3()
+{
+    int num_buckets = 10;
+    float* buckets = (float*)(malloc(sizeof(float)*num_buckets));
+    for(int i = 0; i < num_buckets; i++)
+    {
+      buckets[i] = get_average_portion_magnitude(i*int(FFT_SIZE/num_buckets),(i+1)*int(FFT_SIZE/num_buckets));
+    }
+    int num_maxes = 5;
+    int* flagged = nMaxValIndices(num_maxes, buckets, num_buckets);
+    FastLED.clear();
+    for (int i = 0; i < num_maxes; i++)
+    {
+      for (int j = 0; j < 60; j++)
+      {
+        if(flagged[i] > num_buckets/2)
+        {
+            l_leds[(flagged[i]-(num_buckets/2))*60 + j] = colors[color_selection];
+        }
+        else
+        {
+            l_leds[(flagged[i])*60 + j] = colors[color_selection];
+        }  
+      }  
+    }
+    for (int i = 0; i < FFT_SIZE; i++)
+    {
+          if (magnitudes[i] >= 700)
+          {
+              h_leds[i] = colors[color_selection];
+              l_leds[i] = CRGB::Black;
+          }
+          else
+          {
+              h_leds[i] = CRGB::Black;
+              l_leds[i] = colors[color_selection];
+          }
+    }
+    FastLED.show();
+}
 
 void scoreInterrupt()
 {
@@ -345,6 +386,36 @@ int* shrinkArray(float* in, int num_buckets)
       new_buckets[i+1] = avg;
   }
   return new_buckets;
+}
+
+int* nMaxValIndices(int num_maxes, float arr[], int arr_len)
+{
+  int* indices = (int*)(malloc(sizeof(int)*num_maxes));
+  for(int i = 0; i < num_maxes; i++)
+  {
+			float max_val = -1;
+			int max_ind = -1;
+			for(int j = 0; j < arr_len; j++)
+			{
+				if(contains(indices, j, i) == 0 && arr[j] > max_val)
+				{
+					max_val = arr[j];
+					max_ind = j;
+				}
+			}
+			indices[i] = max_ind;
+		}
+		return indices;
+}
+
+int contains(int my_list[], int val_to_check, int my_list_len)
+{
+    //This is to catch the very rare (maybe impossible) occurrence of two average floats being equal to each other.
+    for(int i = 0; i < my_list_len; i++)
+    {
+      if(my_list[i] == val_to_check) return 1;
+    }
+    return 0;
 }
 
 //Ours
