@@ -69,6 +69,13 @@ int highstrip_rangesize = 100;
 int lowstrip_rangesize = 150;
 
 void setup() {
+
+  pinMode(PATTERN_INPUT_PIN, INPUT);
+  pinMode(COLOR_INPUT_PIN, INPUT);
+  pinMode(BRIGHTNESS_INPUT_PIN, INPUT);
+  pinMode(SCORE_INPUT_PIN, INPUT);
+  pinMode(WIN_INPUT_PIN, INPUT);
+  pinMode(NEWGAME_INPUT_PIN, INPUT);
     
   // Initialize fastled library and turn off the LEDs
   FastLED.addLeds<NEOPIXEL, LED_OUT_HIGH_LEFT>(h_leds, NUM_LEDS);
@@ -119,12 +126,12 @@ void loop() {
 //Joshua McPherson
 void check_inputs()
 {
-  if (digitalRead(PATTERN_INPUT_PIN == HIGH)) change_pattern_selection();
-  if (digitalRead(COLOR_INPUT_PIN == HIGH)) change_color_selection();
-  if (digitalRead(BRIGHTNESS_INPUT_PIN == HIGH)) change_brightness();
-  if (digitalRead(SCORE_INPUT_PIN == HIGH)) scoreInterrupt();
-  if (digitalRead(WIN_INPUT_PIN == HIGH)) winInterrupt();
-  if (digitalRead(NEWGAME_INPUT_PIN == HIGH)) newGameInterrupt();
+  if (digitalRead(PATTERN_INPUT_PIN) == HIGH) change_pattern_selection();
+  if (digitalRead(COLOR_INPUT_PIN) == HIGH) change_color_selection();
+  if (digitalRead(BRIGHTNESS_INPUT_PIN) == HIGH) change_brightness();
+  if (digitalRead(SCORE_INPUT_PIN) == HIGH) scoreInterrupt();
+  if (digitalRead(WIN_INPUT_PIN) == HIGH) winInterrupt();
+  if (digitalRead(NEWGAME_INPUT_PIN) == HIGH) newGameInterrupt();
 }
 
 //Joshua McPherson
@@ -161,6 +168,7 @@ void change_color_selection()
 // John Chaney
 void change_brightness()
 {
+  brightness++;
   switch (brightness){
     case 1:
       FastLED.setBrightness(40);
@@ -172,7 +180,7 @@ void change_brightness()
       FastLED.setBrightness(180);
       break;
   }
-  if (brightness > 1) brightness = 0;
+  if (brightness > 2) brightness = 0;
 }
 
 //Ours
@@ -304,22 +312,9 @@ void pattern3()
         }
         else
         {
-            l_leds[(flagged[i])*60 + j] = colors[color_selection];
+            h_leds[(flagged[i])*60 + j] = colors[color_selection];
         }  
       }  
-    }
-    for (int i = 0; i < FFT_SIZE; i++)
-    {
-          if (magnitudes[i] >= 700)
-          {
-              h_leds[i] = colors[color_selection];
-              l_leds[i] = CRGB::Black;
-          }
-          else
-          {
-              h_leds[i] = CRGB::Black;
-              l_leds[i] = colors[color_selection];
-          }
     }
     FastLED.show();
 }
@@ -327,17 +322,19 @@ void pattern3()
 void scoreInterrupt()
 {
   for (int i = 0; i < 2; i++)
+  {
     for (int i = 0; i < NUM_LEDS; i++) 
     {
       h_leds[i] = CRGB::Red;
       l_leds[i] = CRGB::Red;
     }
     FastLED.show();
-    FastLED.delay(500);
+    FastLED.delay(200);
   
     FastLED.clear();
     FastLED.show();
-    FastLED.delay(500);
+    FastLED.delay(200);
+  }
 }
 
 
@@ -393,19 +390,19 @@ int* nMaxValIndices(int num_maxes, float arr[], int arr_len)
   int* indices = (int*)(malloc(sizeof(int)*num_maxes));
   for(int i = 0; i < num_maxes; i++)
   {
-			float max_val = -1;
-			int max_ind = -1;
-			for(int j = 0; j < arr_len; j++)
-			{
-				if(contains(indices, j, i) == 0 && arr[j] > max_val)
-				{
-					max_val = arr[j];
-					max_ind = j;
-				}
-			}
-			indices[i] = max_ind;
-		}
-		return indices;
+      float max_val = -1;
+      int max_ind = -1;
+      for(int j = 0; j < arr_len; j++)
+      {
+        if(contains(indices, j, i) == 0 && arr[j] > max_val)
+        {
+          max_val = arr[j];
+          max_ind = j;
+        }
+      }
+      indices[i] = max_ind;
+    }
+    return indices;
 }
 
 int contains(int my_list[], int val_to_check, int my_list_len)
@@ -560,6 +557,5 @@ void samplingBegin() {
 boolean samplingIsDone() {
   return sampleCounter >= FFT_SIZE*2;
 }
-      
       
       
