@@ -50,6 +50,7 @@ int color_selection = 3;
 int pattern_selection = 2;
 int brightness = 0;    //Brightness selection variable, from 0-2
 CRGB colors[4] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow}; 
+CRGB p3_colors[6] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow, CRGB::Orange, CRGB::Violet}; 
 CRGB rainbow[256];
 
 //Audio Range Divisions
@@ -102,6 +103,7 @@ void setup() {
   
   // Begin sampling audio
   samplingBegin();
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -114,11 +116,21 @@ void loop() {
     arm_cfft_radix4_f32(&fft_inst, samples);
     // Calculate magnitude of complex numbers output by the FFT.
     arm_cmplx_mag_f32(samples, magnitudes, FFT_SIZE);
-    
+    Serial.println("Completed FFTs");
     //spectrumLoop();
-    light_step();
+    if(get_average_magnitude() > 40)
+    { 
+      light_step();
+    }
+    else
+    {
+      FastLED.clear();
+      FastLED.show();  
+    }
+    Serial.println("Completed light_step()");
     // Restart audio sampling.
     samplingBegin();
+    Serial.println("Completed sampling_begin()");
     cycleCount++;
   }
 }
@@ -146,8 +158,11 @@ void light_step()
           pattern2();
           break;
         case 3:
+          pattern3();
+          Serial.println("Completed pattern3()");
           break;
     }
+    Serial.println("Exited Pattern Switch");
 }
 
 
@@ -293,30 +308,54 @@ void pattern1c()
 //Ours
 void pattern3()
 {
-    int num_buckets = 10;
+    int num_buckets = 20;
+    int buckets_per_strip = num_buckets/2;
     float* buckets = (float*)(malloc(sizeof(float)*num_buckets));
+    Serial.println("Allocated Bucket Space");
+    Serial.println("Contents of Buckets:");
     for(int i = 0; i < num_buckets; i++)
     {
-      buckets[i] = get_average_portion_magnitude(i*int(FFT_SIZE/num_buckets),(i+1)*int(FFT_SIZE/num_buckets));
+      buckets[i] = get_average_portion_magnitude(i*int(float(FFT_SIZE)/num_buckets),(i+1)*int(float(FFT_SIZE)/num_buckets));
+      Serial.print(buckets[i]);
+      Serial.print(" ");
     }
-    int num_maxes = 5;
+    Serial.println("");
+    Serial.println("Populated Buckets");
+    int num_maxes = 12;
+    Serial.println("Indices of Maxes:");
     int* flagged = nMaxValIndices(num_maxes, buckets, num_buckets);
-    FastLED.clear();
-    for (int i = 0; i < num_maxes; i++)
+    Serial.println("");
+    Serial.println("Calculated Indices of Maxes");
+    clear_leds();
+    Serial.println("Cleared LEDs");
+    for (int i = 1; i < num_maxes; i++)
     {
-      for (int j = 0; j < 60; j++)
+      for (int j = 0; j < NUM_LEDS/buckets_per_strip; j++)
       {
-        if(flagged[i] > num_buckets/2)
+        if(flagged[i] < buckets_per_strip)
         {
-            l_leds[(flagged[i]-(num_buckets/2))*60 + j] = colors[color_selection];
+          int loc = flagged[i]*(NUM_LEDS/buckets_per_strip) + j - 1;
+          h_leds[loc] = p3_colors[flagged[i]];
         }
-        else
-        {
-            h_leds[(flagged[i])*60 + j] = colors[color_selection];
-        }  
-      }  
-    }
+      }
+    }  
+        
+        //if(flagged[i] < num_buckets/2)
+        //{
+        //  int loc = (flagged[i])*(NUM_LEDS/(num_buckets*2)) + j;
+        //  h_leds[loc] = p3_colors[flagged[i]];
+        //}  
+        //if(flagged[i] > num_buckets/2)
+        //{
+        //    l_leds[(flagged[i]-(num_buckets/2))*60 + j] = colors[color_selection];
+        //}
+      //}
+    //}  
+    Serial.println("Colored LEDs");
+    free(buckets);
+    free(flagged);
     FastLED.show();
+    Serial.println("Displayed LEDs");
 }
 
 void scoreInterrupt()
@@ -401,6 +440,8 @@ int* nMaxValIndices(int num_maxes, float arr[], int arr_len)
         }
       }
       indices[i] = max_ind;
+      Serial.print(max_ind);
+      Serial.print(" ");
     }
     return indices;
 }
