@@ -218,7 +218,7 @@ void change_brightness()
       FastLED.setBrightness(90);
       break;
     case 3:
-      FastLED.setBrightness(180);
+      FastLED.setBrightness(255); //180
       break;
   }
   if (brightness > 2) brightness = 0;
@@ -454,6 +454,14 @@ void pattern4()
 //Ours
 void pattern5()
 {
+    Serial.println("Getting Low Average:");
+    float low_avg = get_average_portion_magnitude(1, FFT_SIZE/2);
+    Serial.print("Low avg: ");
+    Serial.println(low_avg);
+    Serial.println("Getting High Average:");
+    float high_avg = get_average_portion_magnitude(FFT_SIZE/2, FFT_SIZE);
+    Serial.print("High avg: ");
+    Serial.println(high_avg);
     CRGB curr_color;
     if(color_selection == 4)
     {
@@ -465,7 +473,7 @@ void pattern5()
     {
       curr_color = colors[color_selection];
     }
-    int num_buckets = 20;
+    int num_buckets = 60;
     int buckets_per_strip = num_buckets/2;
     float* buckets = (float*)(malloc(sizeof(float)*num_buckets));
     Serial.println("Allocated Bucket Space");
@@ -484,22 +492,19 @@ void pattern5()
       for (int j = 0; j < NUM_LEDS/buckets_per_strip; j++)
       {
         int loc = i*(NUM_LEDS/buckets_per_strip) + j;
-        if(buckets[i] > 600) h_leds[loc] = curr_color;
+        if(buckets[i] > 300 || buckets[i] > high_avg) h_leds[loc] = curr_color;
         else h_leds[loc] = CRGB::Black;
       }
-    }  
-        
-        //if(flagged[i] < num_buckets/2)
-        //{
-        //  int loc = (flagged[i])*(NUM_LEDS/(num_buckets*2)) + j;
-        //  h_leds[loc] = p3_colors[flagged[i]];
-        //}  
-        //if(flagged[i] > num_buckets/2)
-        //{
-        //    l_leds[(flagged[i]-(num_buckets/2))*60 + j] = colors[color_selection];
-        //}
-      //}
-    //}  
+    }
+    for (int i = buckets_per_strip; i < num_buckets; i++)
+    {
+      for (int j = 0; j < NUM_LEDS/buckets_per_strip; j++)
+      {
+        int loc = (i-buckets_per_strip)*(NUM_LEDS/buckets_per_strip) + j;
+        if(buckets[i] > 300 || buckets[i] > low_avg) l_leds[loc] = curr_color;
+        else l_leds[loc] = CRGB::Black;
+      }
+    } 
     Serial.println("Colored LEDs");
     free(buckets);
     FastLED.show();
@@ -527,13 +532,49 @@ void scoreInterrupt()
 
 void winInterrupt()
 {
-  // make really cool stuff happen here for teh win!!11!!!!1
+  int col_val;
+  for (int i = 0; i < 12; i++)
+  {
+    for (int i = 0; i < NUM_LEDS; i++) 
+    {
+      h_leds[i] = rainbow[col_val];
+      l_leds[i] = rainbow[col_val];
+    }
+    FastLED.show();
+    FastLED.delay(100);
+    FastLED.clear();
+    FastLED.show();
+    FastLED.delay(100);
+    col_val = (col_val + 70)%256;
+  }
 }
 
 
 void newGameInterrupt()
 {
-  // rainbow stuff happens I guess
+  FastLED.clear();
+  FastLED.show();
+  float currVal = 1;
+  for(int t = 0; t < 70; t++)
+  {
+    for(int c = 0; c < 300; c++)
+    {
+      int c_index = random8();
+      int led_index = random16(300);
+      h_leds[led_index] = rainbow[c_index];
+    }
+    if (t < 35)
+    {
+      currVal /= 2;  
+    }
+    else
+    {
+      currVal *= 2;  
+    }
+    FastLED.show();
+    FastLED.delay(50);
+    FastLED.clear();
+  }
 }
 
 
@@ -616,7 +657,22 @@ float get_average_portion_magnitude(int low, int high)
     float sum = 0;
     for(int i = low; i < high; i++)
     {
-        sum += magnitudes[i];     
+        sum += magnitudes[i];    
+        Serial.print(magnitudes[i]);
+        Serial.print(" "); 
+    }
+    Serial.println("");
+    float avg = sum/(high-low);
+    return avg;
+}
+
+//Ours
+float get_average(float* nums, int low, int high)
+{
+    float sum = 0;
+    for(int i = low; i < high; i++)
+    {
+        sum += nums[i];     
     }
     float avg = sum/(high-low);
     return avg;
