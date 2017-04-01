@@ -55,10 +55,10 @@ int cycleCount = 0;
 // Define the array of leds
 CRGB h_leds[NUM_LEDS]; //Upper strips of leds on trailer
 CRGB l_leds[NUM_LEDS]; //Lower strips of leds on trailer 
-int color_selection = 3;
-int pattern_selection = 2;
+int color_selection = 4;
+int pattern_selection = 1;
 int brightness = 0;    //Brightness selection variable, from 0-2
-CRGB colors[4] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow}; 
+CRGB colors[5] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow, 0x123456}; 
 CRGB p3_colors[6] = {CRGB::Red, CRGB::Green, CRGB::Blue, CRGB::Yellow, CRGB::Orange, CRGB::Violet}; 
 CRGB rainbow[256];
 
@@ -77,6 +77,9 @@ int lowstrip_lowmidrange_midpoint = 225;
 
 int highstrip_rangesize = 100;
 int lowstrip_rangesize = 150;
+
+//Rainbow vars
+int rainbow_index = 0;
 
 void setup() {
 
@@ -181,7 +184,7 @@ void light_step()
           pattern2();
           break;
         case 3:
-          pattern3();
+          pattern5();
           Serial.println("Completed pattern3()");
           break;
     }
@@ -200,7 +203,7 @@ void change_pattern_selection()
 void change_color_selection()
 {
   color_selection++;
-  if (color_selection > 3) color_selection = 0;
+  if (color_selection > 4) color_selection = 0;
 }
 
 // John Chaney
@@ -265,25 +268,37 @@ void pattern2()
     int lm_leds = int((lowmid_mag/ratio_base)*lowstrip_rangesize/2);
     if (lm_leds >= 75) lm_leds = 74;
 
+    CRGB curr_color;
+    if(color_selection == 4)
+    {
+      rainbow_index++;
+      if(rainbow_index >= 256) rainbow_index = 0;
+      curr_color = rainbow[rainbow_index];
+    }
+    else
+    {
+      curr_color = colors[color_selection];
+    }
+
     for(int i = highstrip_midrange_midpoint-m_leds; i < highstrip_midrange_midpoint+m_leds; i++)
     {
-      h_leds[i] = colors[color_selection];
+      h_leds[i] = curr_color;
     }
     for(int i = highstrip_highmidrange_midpoint-m_leds; i < highstrip_highmidrange_midpoint+m_leds; i++)
     {
-      h_leds[i] = colors[color_selection];  
+      h_leds[i] = curr_color;  
     }
     for(int i = highstrip_presencerange_midpoint-m_leds; i < highstrip_presencerange_midpoint+m_leds; i++)
     {
-      h_leds[i] = colors[color_selection];  
+      h_leds[i] = curr_color;  
     }
     for(int i = lowstrip_bassrange_midpoint-m_leds; i < lowstrip_bassrange_midpoint+m_leds; i++)
     {
-      l_leds[i] = colors[color_selection];  
+      l_leds[i] = curr_color;  
     }
     for(int i = lowstrip_lowmidrange_midpoint-m_leds; i < lowstrip_lowmidrange_midpoint+m_leds; i++)
     {
-      l_leds[i] = colors[color_selection];  
+      l_leds[i] = curr_color;  
     }
     FastLED.show();
 }
@@ -309,20 +324,69 @@ void pattern1b()
 }
 
 //Ours
-void pattern1c()
+void pattern1c_rainbow_spread()
 {
     float avg = get_average_magnitude();
     for (int i = 0; i < 256; i++)
     {
           if (magnitudes[i] >= 700)
           {
-              h_leds[i] = colors[color_selection];
+              if (color_selection == 4)
+              {
+                  rainbow_index++;
+                  if(rainbow_index >= 256) rainbow_index = 0;
+                  h_leds[i] = rainbow[rainbow_index];
+              }
+              else
+              {
+                h_leds[i] = colors[color_selection];
+              }
               l_leds[i] = CRGB::Black;
           }
           else
           {
               h_leds[i] = CRGB::Black;
-              l_leds[i] = colors[color_selection];
+              if (color_selection == 4)
+              {
+                  rainbow_index++;
+                  if(rainbow_index >= 256) rainbow_index = 0;
+                  l_leds[i] = rainbow[rainbow_index];
+              }
+              else
+              {
+                l_leds[i] = colors[color_selection];
+              }
+          }
+    }
+    FastLED.show();
+}
+
+//Ours
+void pattern1c()
+{
+    float avg = get_average_magnitude();
+    CRGB curr_color;
+    if(color_selection == 4)
+    {
+      rainbow_index++;
+      if(rainbow_index >= 256) rainbow_index = 0;
+      curr_color = rainbow[rainbow_index];
+    }
+    else
+    {
+      curr_color = colors[color_selection];
+    }
+    for (int i = 0; i < NUM_LEDS; i++)
+    {
+          if (magnitudes[i] >= 700)
+          {
+              h_leds[i] = curr_color;
+              l_leds[i] = CRGB::Black;
+          }
+          else
+          {
+              h_leds[i] = CRGB::Black;
+              l_leds[i] = curr_color;
           }
     }
     FastLED.show();
@@ -344,7 +408,7 @@ void pattern3()
     }
     Serial.println("");
     Serial.println("Populated Buckets");
-    int num_maxes = 12;
+    int num_maxes = 6;
     Serial.println("Indices of Maxes:");
     int* flagged = nMaxValIndices(num_maxes, buckets, num_buckets);
     Serial.println("");
@@ -377,6 +441,67 @@ void pattern3()
     Serial.println("Colored LEDs");
     free(buckets);
     free(flagged);
+    FastLED.show();
+    Serial.println("Displayed LEDs");
+}
+
+//Ours
+void pattern4()
+{
+    
+}
+
+//Ours
+void pattern5()
+{
+    CRGB curr_color;
+    if(color_selection == 4)
+    {
+      rainbow_index++;
+      if(rainbow_index >= 256) rainbow_index = 0;
+      curr_color = rainbow[rainbow_index];
+    }
+    else
+    {
+      curr_color = colors[color_selection];
+    }
+    int num_buckets = 20;
+    int buckets_per_strip = num_buckets/2;
+    float* buckets = (float*)(malloc(sizeof(float)*num_buckets));
+    Serial.println("Allocated Bucket Space");
+    Serial.println("Contents of Buckets:");
+    for(int i = 0; i < num_buckets; i++)
+    {
+      buckets[i] = get_average_portion_magnitude(i*int(float(FFT_SIZE)/num_buckets),(i+1)*int(float(FFT_SIZE)/num_buckets));
+      Serial.print(buckets[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+    clear_leds();
+    Serial.println("Cleared LEDs");
+    for (int i = 0; i < buckets_per_strip; i++)
+    {
+      for (int j = 0; j < NUM_LEDS/buckets_per_strip; j++)
+      {
+        int loc = i*(NUM_LEDS/buckets_per_strip) + j;
+        if(buckets[i] > 600) h_leds[loc] = curr_color;
+        else h_leds[loc] = CRGB::Black;
+      }
+    }  
+        
+        //if(flagged[i] < num_buckets/2)
+        //{
+        //  int loc = (flagged[i])*(NUM_LEDS/(num_buckets*2)) + j;
+        //  h_leds[loc] = p3_colors[flagged[i]];
+        //}  
+        //if(flagged[i] > num_buckets/2)
+        //{
+        //    l_leds[(flagged[i]-(num_buckets/2))*60 + j] = colors[color_selection];
+        //}
+      //}
+    //}  
+    Serial.println("Colored LEDs");
+    free(buckets);
     FastLED.show();
     Serial.println("Displayed LEDs");
 }
