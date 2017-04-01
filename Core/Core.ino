@@ -1,3 +1,5 @@
+#include <Bounce2.h>
+
 #include "FastLED.h"
 
 // How many leds in your strip?
@@ -38,6 +40,13 @@ float frequencyWindow[NUM_LEDS+1];
 CRGB leds[NUM_LEDS];
 //End of Adafruit Sample Vars//
 
+Bounce patternButton = Bounce();
+Bounce colorButton = Bounce();
+Bounce brightnessButton = Bounce();
+Bounce scoreButton = Bounce();
+Bounce winButton = Bounce();
+Bounce newGameButton = Bounce();
+
 int cycleCount = 0;
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
@@ -77,6 +86,13 @@ void setup() {
   pinMode(SCORE_INPUT_PIN, INPUT);
   pinMode(WIN_INPUT_PIN, INPUT);
   pinMode(NEWGAME_INPUT_PIN, INPUT);
+
+  patternButton.attach(PATTERN_INPUT_PIN); patternButton.interval(5);
+  colorButton.attach(COLOR_INPUT_PIN); colorButton.interval(5);
+  brightnessButton.attach(BRIGHTNESS_INPUT_PIN); brightnessButton.interval(5);
+  scoreButton.attach(SCORE_INPUT_PIN); scoreButton.interval(5);
+  winButton.attach(WIN_INPUT_PIN); winButton.interval(5);
+  newGameButton.attach(NEWGAME_INPUT_PIN); newGameButton.interval(5);
     
   // Initialize fastled library and turn off the LEDs
   FastLED.addLeds<NEOPIXEL, LED_OUT_HIGH_LEFT>(h_leds, NUM_LEDS);
@@ -138,12 +154,19 @@ void loop() {
 //Joshua McPherson
 void check_inputs()
 {
-  if (digitalRead(PATTERN_INPUT_PIN) == HIGH) change_pattern_selection();
-  if (digitalRead(COLOR_INPUT_PIN) == HIGH) change_color_selection();
-  if (digitalRead(BRIGHTNESS_INPUT_PIN) == HIGH) change_brightness();
-  if (digitalRead(SCORE_INPUT_PIN) == HIGH) scoreInterrupt();
-  if (digitalRead(WIN_INPUT_PIN) == HIGH) winInterrupt();
-  if (digitalRead(NEWGAME_INPUT_PIN) == HIGH) newGameInterrupt();
+
+  patternButton.update();
+  colorButton.update();
+  brightnessButton.update();
+  scoreButton.update();
+  winButton.update();
+  newGameButton.update();
+  if (patternButton.rose()) change_pattern_selection();
+  if (colorButton.rose()) change_color_selection();
+  if (brightnessButton.rose()) change_brightness();
+  if (scoreButton.rose()) scoreInterrupt();
+  if (winButton.rose()) winInterrupt();
+  if (newGameButton.rose()) newGameInterrupt();
 }
 
 //Joshua McPherson
@@ -598,5 +621,3 @@ void samplingBegin() {
 boolean samplingIsDone() {
   return sampleCounter >= FFT_SIZE*2;
 }
-      
-      
