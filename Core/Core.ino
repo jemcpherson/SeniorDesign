@@ -225,7 +225,7 @@ void change_brightness()
 }
 
 //Ours
-void pattern1()
+void pattern1bad()
 {
     //int num_buckets = 30;
     //int bucket_size = NUM_LEDS/num_buckets;
@@ -378,7 +378,7 @@ void pattern1c()
     }
     for (int i = 0; i < NUM_LEDS; i++)
     {
-          if (magnitudes[i] >= 700)
+          if (magnitudes[i] >= 400)
           {
               h_leds[i] = curr_color;
               l_leds[i] = CRGB::Black;
@@ -473,7 +473,7 @@ void pattern5()
     {
       curr_color = colors[color_selection];
     }
-    int num_buckets = 60;
+    int num_buckets = 10;
     int buckets_per_strip = num_buckets/2;
     float* buckets = (float*)(malloc(sizeof(float)*num_buckets));
     Serial.println("Allocated Bucket Space");
@@ -492,7 +492,7 @@ void pattern5()
       for (int j = 0; j < NUM_LEDS/buckets_per_strip; j++)
       {
         int loc = i*(NUM_LEDS/buckets_per_strip) + j;
-        if(buckets[i] > 300 || buckets[i] > high_avg) h_leds[loc] = curr_color;
+        if(buckets[i] > 220 || buckets[i] > high_avg) h_leds[loc] = curr_color;
         else h_leds[loc] = CRGB::Black;
       }
     }
@@ -501,7 +501,7 @@ void pattern5()
       for (int j = 0; j < NUM_LEDS/buckets_per_strip; j++)
       {
         int loc = (i-buckets_per_strip)*(NUM_LEDS/buckets_per_strip) + j;
-        if(buckets[i] > 300 || buckets[i] > low_avg) l_leds[loc] = curr_color;
+        if(buckets[i] > 240 || buckets[i] > low_avg) l_leds[loc] = curr_color;
         else l_leds[loc] = CRGB::Black;
       }
     } 
@@ -562,6 +562,7 @@ void newGameInterrupt()
       int c_index = random8();
       int led_index = random16(300);
       h_leds[led_index] = rainbow[c_index];
+      l_leds[led_index] = rainbow[c_index];
     }
     if (t < 35)
     {
