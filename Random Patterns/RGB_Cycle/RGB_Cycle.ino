@@ -1,7 +1,7 @@
 #include "FastLED.h"
 
 // How many leds in your strip?
-#define NUM_LEDS 60
+#define NUM_LEDS 300
 #define DATA_PIN 6
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
@@ -50,20 +50,19 @@ void setup() {
 
 void loop() { 
   // Turn the LED on, then pause
-  FastLED.setBrightness(20);
-  for(int i = 0; i < 60; i++)
+  for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = 0x0000FF;
     FastLED.show();
     //delay(50);
   }
-  for(int i = 0; i < 60; i++)
+  for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = 0x00FF00;
     FastLED.show();
     //delay(50);
   }
-  for(int i = 0; i < 60; i++)
+  for(int i = 0; i < NUM_LEDS; i++)
   {
     leds[i] = 0xFF0000;
     FastLED.show();
